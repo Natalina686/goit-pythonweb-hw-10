@@ -5,5 +5,10 @@ psycopg2-binary
 python-dotenv
 pydantic
 alembic
-Faker
+faker
 email-validator
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+cloudinary
+
