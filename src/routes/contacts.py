@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from src import crud, schemas
-from src.db import get_db
+from .. import crud, schemas
+from ..db import get_db
+from .auth import get_current_user
+
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 
 @router.post("/", response_model=schemas.ContactResponse, status_code=201)
-def create_contact(contact: schemas.ContactCreate, db: Session = Depends(get_db)):
-    return crud.create_contact(db, contact)
+def create_contact(contact: schemas.ContactCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return crud.create_contact(db, contact, owner_id=current_user.id)
 
 
 @router.get("/", response_model=List[schemas.ContactResponse])

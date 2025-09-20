@@ -2,12 +2,13 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, extract, and_
 from datetime import date, timedelta, date
-
+from fastapi import HTTPException
 from . import models, schemas
+from .security import get_password_hash, verify_password
 
 
-def create_contact(db: Session, contact_in: schemas.ContactCreate) -> models.Contact:
-    db_obj = models.Contact(**contact_in.dict())
+def create_contact(db: Session, contact_in: schemas.ContactCreate, owner_id) -> models.Contact:
+    db_obj = models.Contact(**contact_in.dict(), owner_id=owner_id)
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
@@ -52,7 +53,7 @@ def update_contact(db: Session, contact_id: int, contact_in: schemas.ContactUpda
 def delete_contact(db: Session, contact_id: int) -> bool:
     db_obj = db.get(models.Contact, contact_id)
     if not db_obj:
-        return False
+        return None
     db.delete(db_obj)
     db.commit()
     return True
@@ -66,3 +67,43 @@ def get_upcoming_birthdays(db: Session, days: int = 7) -> List[models.Contact]:
              for m, d in dates]
     query = db.query(models.Contact).filter(or_(*conds))
     return query.all()
+
+
+def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
+    return db.query(models.User).filter(models.User.email == email).first()
+
+def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
+    existing_user = get_user_by_email(db, user_in.email)
+    if existing_user:
+        raise HTTPException(status_code=409, detail="Email already registered")
+    user = models.User(
+        email=user_in.email,
+        hashed_password=get_password_hash(user_in.password),
+        full_name=user_in.full_name
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+def authenticate_user(db: Session, email: str, password: str) -> Optional[models.User]:
+    user = get_user_by_email(db, email)
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user
+
+def set_user_verified(db: Session, user: models.User):
+    user.is_verified = True
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+def update_user_avatar(db: Session, user: models.User, avatar_url: str):
+    user.avatar_url = avatar_url
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user

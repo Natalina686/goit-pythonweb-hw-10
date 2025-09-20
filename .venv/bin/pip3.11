@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/Users/nata/2025 repositories/goit-pythonweb-hw-08/.venv/bin/python3.11" "$0" "$@"
+'''exec' "/Users/nata/2025 repositories/goit-pythonweb-hw-10/.venv/bin/python" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re

@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/nata/2025 repositories/goit-pythonweb-hw-08/.venv"
+VIRTUAL_ENV="/Users/nata/2025 repositories/goit-pythonweb-hw-10/.venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
