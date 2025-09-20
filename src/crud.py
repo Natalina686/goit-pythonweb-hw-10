@@ -1,7 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, extract, and_
-from datetime import date, timedelta, date
+from datetime import date, timedelta
 from fastapi import HTTPException
 from . import models, schemas
 from .security import get_password_hash, verify_password
@@ -15,17 +15,22 @@ def create_contact(db: Session, contact_in: schemas.ContactCreate, owner_id) -> 
     return db_obj
 
 
-def get_contact(db: Session, contact_id: int) -> Optional[models.Contact]:
-    return db.get(models.Contact, contact_id)
+def get_contact(db: Session, contact_id: int, owner_id: int) -> Optional[models.Contact]:
+    obj = db.get(models.Contact, contact_id)
+    if not obj or obj.owner_id != owner_id:
+        return None
+    return obj
+
 
 
 def search_contacts(
     db: Session,
+    owner_id: int,
     q: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
 ) -> List[models.Contact]:
-    query = db.query(models.Contact)
+    query = db.query(models.Contact).filter(models.Contact.owner_id == owner_id)
     if q:
         like = f"%{q}%"
         query = query.filter(
@@ -38,9 +43,9 @@ def search_contacts(
     return query.offset(skip).limit(limit).all()
 
 
-def update_contact(db: Session, contact_id: int, contact_in: schemas.ContactUpdate) -> Optional[models.Contact]:
+def update_contact(db: Session, contact_id: int, contact_in: schemas.ContactUpdate, owner_id: int) -> Optional[models.Contact]:
     db_obj = db.get(models.Contact, contact_id)
-    if not db_obj:
+    if not db_obj or db_obj.owner_id != owner_id:
         return None
     for key, value in contact_in.dict(exclude_unset=True).items():
         setattr(db_obj, key, value)
@@ -50,13 +55,15 @@ def update_contact(db: Session, contact_id: int, contact_in: schemas.ContactUpda
     return db_obj
 
 
-def delete_contact(db: Session, contact_id: int) -> bool:
+
+def delete_contact(db: Session, contact_id: int, owner_id: int) -> bool:
     db_obj = db.get(models.Contact, contact_id)
-    if not db_obj:
-        return None
+    if not db_obj or db_obj.owner_id != owner_id:
+        return False
     db.delete(db_obj)
     db.commit()
     return True
+
 
 
 def get_upcoming_birthdays(db: Session, days: int = 7) -> List[models.Contact]:

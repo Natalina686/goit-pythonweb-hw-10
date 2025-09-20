@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
-from .deps import get_current_user
-from ..db import get_db
-from .. import crud
+from src.deps import get_current_user
+from src.db import get_db
+from src import crud, schemas
 from cloudinary.uploader import upload as cloud_upload
 from os import getenv
 import time
@@ -26,7 +26,7 @@ def check_rate(user_id):
         RATE[user_id] = (last_reset, count+1)
         return True
 
-@router.get("/me")
+@router.get("/me", response_model=schemas.UserResponse)
 def me(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     if not check_rate(current_user.id):
         raise HTTPException(status_code=429, detail="Too many requests")

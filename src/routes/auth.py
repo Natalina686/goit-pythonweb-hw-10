@@ -6,8 +6,12 @@ from src import schemas, crud, models
 from src.db import get_db
 from src.security import create_access_token
 from fastapi.security import OAuth2PasswordRequestForm
+from src.settings import settings
+from jose import jwt, JWTError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
 
 @router.post("/register", response_model=schemas.UserResponse, status_code=201)
 def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -28,19 +32,16 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     access_token = create_access_token({"sub": str(user.id)})
     return {"access_token": access_token, "token_type":"bearer"}
 
+
 @router.get("/verify")
 def verify_email(token: str, db: Session = Depends(get_db)):
-    from jose import jwt, JWTError
-    from os import getenv
-    SECRET_KEY = getenv("SECRET_KEY")
-    ALGORITHM = getenv("ALGORITHM")
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id = int(payload.get("sub"))
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = db.get(crud.models.User, user_id)
+    user = db.get(models.User, user_id)
     if not user:
-        raise HTTPException(404, "User not found")
+        raise HTTPException(status_code=404, detail="User not found")
     crud.set_user_verified(db, user)
     return {"detail":"Email verified"}
