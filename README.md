@@ -1,5 +1,13 @@
 # Contacts API
 
+Features
+
+- User registration with email verification
+- JWT-based authentication
+- CRUD operations for users
+- Dockerized environment for easy setup
+- PostgreSQL database
+
 **Технології:** Python 3.11, FastAPI, SQLAlchemy, PostgreSQL, Alembic, Docker
 
 ## Клонування
